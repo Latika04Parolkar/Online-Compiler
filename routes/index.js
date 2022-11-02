@@ -36,6 +36,7 @@ router.get('/status', async (req, res) => {
 
 router.post('/run', async (req, res) => {
     const { language = "cpp", code, input } = req.body;
+    //const code = JSON.parse(req.body.code);
     if (code === '' || code === undefined) {
         return res.status(400).json({
             success: false,

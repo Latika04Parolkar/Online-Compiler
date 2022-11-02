@@ -1,15 +1,16 @@
 const Queue = require("bull");
 const env = require("dotenv");
 env.config();
-
-const jobQueue = new Queue('job-queue');
+// "rediss://red-cdh1jvqen0hl21kljf10:1bwn5uFr3tdeO7u6gd4FsCI1FUrMYKuQ@singapore-redis.render.com:6379"
+const jobQueue = new Queue("job-queue", "redis://red-cdh1jvqen0hl21kljf10:6379");
 const NUM_WORKERS = 5;
 const Job = require("../db/models/jobModel");
 const { executeCpp } = require('../App/c++/executeCpp');
 const { executePy } = require('../App/python/executePy');
 const { executeJava } = require('../App/java/executeFileJava');
-
+console.log(jobQueue);
 jobQueue.process(NUM_WORKERS, async ({ data }) => {
+    console.log(data);
     const { id: jobId } = data;
     const job = await Job.findById(jobId);
     if (job === undefined) {
@@ -30,11 +31,12 @@ jobQueue.process(NUM_WORKERS, async ({ data }) => {
         job["status"] = "success";
         job["output"] = output;
         await job.save();
+
     } catch (err) {
         job["completedAt"] = new Date();
         console.log("err", err.error);
 
-        if( (err.error.killed === true && err.error.signal === 'SIGKILL') || err.error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER" )
+        if( (err.error.signal === 'SIGTERM') || err.error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER" )
         {
             job["status"] = "TLE";
             job["output"] = "Process killed, because it ran longer than 10 seconds. Is your code waiting for keyboard input which is not supplied?" + "\n" + err.stdout;
