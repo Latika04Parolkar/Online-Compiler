@@ -10,7 +10,6 @@ const { executePy } = require('../App/python/executePy');
 const { executeJava } = require('../App/java/executeFileJava');
 console.log(jobQueue);
 jobQueue.process(NUM_WORKERS, async ({ data }) => {
-    console.log(data);
     const { id: jobId } = data;
     const job = await Job.findById(jobId);
     if (job === undefined) {
