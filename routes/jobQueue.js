@@ -2,24 +2,24 @@ const Queue = require("bull");
 const env = require("dotenv");
 env.config();
 // "rediss://red-cdh1jvqen0hl21kljf10:1bwn5uFr3tdeO7u6gd4FsCI1FUrMYKuQ@singapore-redis.render.com:6379"
-const jobQueue = new Queue("job-queue", "redis://red-cdh1jvqen0hl21kljf10:6379");
+// "redis://red-cdh1jvqen0hl21kljf10:6379"
+const jobQueue = new Queue("job-queue");
 const NUM_WORKERS = 5;
 const Job = require("../db/models/jobModel");
 const { executeCpp } = require('../App/c++/executeCpp');
 const { executePy } = require('../App/python/executePy');
 const { executeJava } = require('../App/java/executeFileJava');
-console.log(jobQueue);
+
 jobQueue.process(NUM_WORKERS, async ({ data }) => {
     const { id: jobId } = data;
     const job = await Job.findById(jobId);
     if (job === undefined) {
         throw Error("job not found");
     }
-
     try {
         job["startedAt"] = new Date();
         if (job.language === 'cpp') {
-            output = await executeCpp(job.filePath, job.inputPath);
+                output = await executeCpp(job.filePath, job.inputPath);
         } else if (job.language === 'py') {
             output = await executePy(job.filePath, job.inputPath);
         } else {
@@ -29,13 +29,14 @@ jobQueue.process(NUM_WORKERS, async ({ data }) => {
         console.log(job["completedAt"]);
         job["status"] = "success";
         job["output"] = output;
+        console.log(job);
         await job.save();
-
     } catch (err) {
+        console.log("iuygfd");
         job["completedAt"] = new Date();
-        console.log("err", err.error);
+        console.log("err", err);
 
-        if( (err.error.signal === 'SIGTERM') || err.error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER" )
+        if( (err.error.signal === 'SIGTERM') )
         {
             job["status"] = "TLE";
             job["output"] = "Process killed, because it ran longer than 10 seconds. Is your code waiting for keyboard input which is not supplied?" + "\n" + err.stdout;

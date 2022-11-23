@@ -12,7 +12,7 @@ const executeJava = async (filePath, inputPath) => {
         return new Promise((resolve, reject) => {
             const child = spawn('java', [dirCodes], {
                 
-                timeout: 5 * 1000,
+                timeout: 10 * 1000,
             });
 
             child.stdout.on('data', data => {
@@ -37,7 +37,7 @@ const executeJava = async (filePath, inputPath) => {
         return new Promise((resolve, reject) => {
             const input = readFileSync(inputPath);
             const child = spawn('java', [dirCodes], {
-                timeout: 5 * 1000,
+                timeout: 10 * 1000,
             });
             child.stdin.write(input);
             child.stdin.end();

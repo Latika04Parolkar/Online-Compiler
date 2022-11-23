@@ -21,11 +21,18 @@ const executeCpp = async (filePath, inputPath) => {
                     reject(String(stderr));
                 }
                 const child = spawn(outPath, [], {
-                    timeout: 5 * 1000,
+                    timeout: 10 * 1000,
                 });
 
+                child.on('exit', (code, signal) => {
+                    console.log('exit :- ', signal);
+                    if (signal === 'SIGTERM') {
+                        kill(-child.pid);
+                        reject(new Error("Timed out!"))
+                    }
+                })
+
                 child.stdout.on('data', data => {
-                    console.log('stdout ', data);
                     resolve(String(data));
                 });
 
@@ -34,13 +41,6 @@ const executeCpp = async (filePath, inputPath) => {
                     reject(String(error));
                 });
 
-                child.on('exit', (code, signal) => {
-                    console.log('exit :- ', signal);
-                    if (signal === 'SIGTERM') {
-                        kill(-child.pid);
-                        reject("timed out!")
-                    }
-                })
             })
         })
     } else {
@@ -56,7 +56,7 @@ const executeCpp = async (filePath, inputPath) => {
                 }
                 const input = readFileSync(inputPath);
                 const child = spawn(outPath, [], {
-                    timeout: 5 * 1000,
+                    timeout: 10 * 1000,
                 });
                 child.stdin.write(input);
                 child.stdin.end();
